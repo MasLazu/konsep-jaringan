@@ -1,6 +1,6 @@
 # Three Way Handshake
 
-![Open Systems Interconnection Illustration](./assets/three-way-handsake-illustration.jpg)
+![Open Systems Interconnection Illustration](./assets/three-way-handshake-illustration.png)
 
 ## Pengertian
 

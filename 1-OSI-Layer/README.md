@@ -1,9 +1,3 @@
-Nama : Muhammad Fattachul Aziz
-
-Kelas : 2 D4IT A
-
-NRP : 3122600018
-
 # Open Systems Interconnection ( OSI )
 
 ![Open Systems Interconnection Illustration](./assets/Communication_Protocol.png)
