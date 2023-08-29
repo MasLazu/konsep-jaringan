@@ -1,6 +1,8 @@
 # Three Way Handshake
 
-![Open Systems Interconnection Illustration](./assets/three-way-handshake-illustration.png)
+<div align="center">
+<image src="./assets/three-way-handshake-illustration.png" alt="Open Systems Interconnection Illustration">
+</div>
 
 ## Pengertian
 
