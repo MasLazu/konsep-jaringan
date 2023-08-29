@@ -12,8 +12,8 @@
 
 Pada sample capture wireshark <strong>http_with_jpegs.cap</strong> terdapat 5 gambar antara lain :
 
-1. Gambar pertama terdapat pada paket nomor 61.<br><img src="./assets/gambar-package.png"><img src="./assets/gambar-hasil.png">
-2. Gambar kedua terdapat pada paket ke 72<br><img src="./assets/paket-gambar-2.png"><img src="./assets/gambar2.png">
-3. Gambar ketiga terdapat pada paket ke 259<br><img src="./assets/paket-gambar-3.png"><img src="./assets/gambar3.png">
-4. Gambar ketiga terdapat pada paket ke 269<br><img src="./assets/paket-gambar-4.png"><img src="./assets/gambar4.png">
-5. Gambar ketiga terdapat pada paket ke 479<br><img src="./assets/paket-gambar-5.png"><img src="./assets/gambar5.png">
+1. Gambar pertama terdapat pada nomor ke 61.<br><img src="./assets/gambar-package.png"><img src="./assets/gambar-hasil.png">
+2. Gambar kedua terdapat pada nomor ke 72<br><img src="./assets/paket-gambar-2.png"><img src="./assets/gambar2.png">
+3. Gambar ketiga terdapat pada nomor ke 259<br><img src="./assets/paket-gambar-3.png"><img src="./assets/gambar3.png">
+4. Gambar ketiga terdapat pada nomor ke 269<br><img src="./assets/paket-gambar-4.png"><img src="./assets/gambar4.png">
+5. Gambar ketiga terdapat pada nomor ke 479<br><img src="./assets/paket-gambar-5.png"><img src="./assets/gambar5.png">
