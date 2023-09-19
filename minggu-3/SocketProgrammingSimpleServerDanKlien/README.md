@@ -1,390 +1,280 @@
-# Pemrograman Socket dalam Bahasa C: Server dan Klien Sederhana
+# SOCKET PROGRAMMING
 
-`server.c` - server multithread
+## Source Code
 
-`server_single.c` - server singlethread
+### 1. Server - `server.c`
 
-`client.c` - klien
+#### Header
 
-## Pemrograman Socket
+Kode dibawah ini mengimport berbagai header file standar dari C dan header terkait jaringan:
 
-Ini adalah tutorial pra-proyek untuk pemrograman socket.
+```c
+#include <stdio.h>          // input/output dan alokasi memori
+#include <stdlib.h>         // input/output dan alokasi memori
+#include <netdb.h>          // jaringan untuk operasi socket
+#include <netinet/in.h>     // jaringan untuk operasi socket
+#include <string.h>         // manipulasi string
+#include <unistd.h>         // layanan sistem operasi POSIX
+#include <stdbool.h>        // tipe data boolean
+#include <time.h>           // fungsi-fungsi terkait waktu
+```
 
-Jika Anda sudah familiar dengan pemrograman socket, silakan langsung menuju ke Bagian Praktik.
+#### Fungsi `bzero`
 
-### 1. Apa Itu Socket?
+Fungsi ini menempatkan n byte null ke dalam string s.
 
-* Dengan socket, dua proses yang berbeda dapat berkomunikasi satu sama lain.
-* Socket hanyalah sebuah "file."
-* Anda bisa membayangkan bahwa dua proses yang berbeda memiliki file (socket) dan mereka membaca data yang diterima dari socket dan menulis ke socket untuk mengirimkan data ke jaringan.
-* Jadi, socket memiliki deskriptor file, yang hanyalah bilangan bulat untuk mengidentifikasi file yang terbuka.
-
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/19291492/44955905-363dae80-aef6-11e8-9719-ac759adbdfaa.png"/>
-</p>
-
-### 2. Jenis Socket
-
-Ada dua jenis socket yang umum digunakan: "Socket Aliran" (Stream Sockets) dan "Socket Datagram" (Datagram Sockets). Socket aliran menggunakan TCP untuk transmisi data, sedangkan socket datagram menggunakan UDP.
-
-### 3. Proses Klien & Proses Server
-
-#### Klien: Biasanya meminta informasi dari server.
-
-* Membuat socket dengan pemanggilan sistem `socket()`.
-* Menghubungkan socket ke alamat server dengan pemanggilan sistem `connect()`.
-* Mengirim dan menerima data. Ada beberapa cara untuk melakukannya, tetapi cara termudah adalah dengan menggunakan pemanggilan sistem `read()` dan `write()`.
-
-#### Server: Menerima permintaan dari klien, melakukan pemrosesan yang diperlukan, dan mengirimkannya ke klien.
-
-* Membuat socket dengan pemanggilan sistem `socket()`.
-* Membinding socket ke alamat (IP + port) dengan pemanggilan sistem `bind()`.
-* Mendengarkan koneksi dengan pemanggilan sistem `listen()`.
-* Menerima koneksi dengan pemanggilan sistem `accept()`. Pemanggilan ini biasanya memblokir koneksi sampai seorang klien terhubung dengan server.
-* Mengirim dan menerima data menggunakan pemanggilan sistem `read()` dan `write()`.
-
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/19291492/44955906-363dae80-aef6-11e8-9795-161a90f30b1e.png"/>
-</p>
-
-<p align="center">Interaksi antara server dan klien</p>
-
-### Pengetahuan Pendahuluan Sebelum Memprogram
-
-## 1. Struktur
-
-Anda akan menggunakan fungsi-fungsi socket, dan sebagian besar fungsi socket menggunakan struktur alamat socket.
-
-- `sockaddr`: struktur alamat socket generik
-
-```objectivec
-struct sockaddr {
-    // mewakili famili alamat, dalam kebanyakan kasus AF_INET)
-    unsigned short     sa_family;
-    
-    // 14 byte alamat spesifik protokol, untuk famili internet, nomor port dan alamat IP (sockaddr_in) digunakan
-    char               sa_data[14]; 
+```c
+void bzero(void *a, size_t n) {
+    memset(a, 0, n);
 }
 ```
 
-- `sockaddr_in`: salah satu jenis sockaddr, ini mewakili nomor port dan alamat IP
+#### Fungsi `bcopy`
 
-```objectivec
-struct sockaddr_in {
-    short int              sin_family;   // AF_INET
-    unsigned short int     sin_port;     // nomor port 16-bit
-    struct in_addr         sin_addr;     // alamat IP 32-bit
-    unsigned char          sin_zero[8];  
+Fungsi ini menyalin n byte-byte string s1 ke byte string s2.
+
+```c
+void bcopy(const void *src, void *dest, size_t n) {
+    memmove(dest, src, n);
 }
 ```
 
-- `in_addr`: struktur yang digunakan dalam sockaddr_in
+#### Fungsi `init_sockaddr_in`
 
-```objectivec
-struct in_addr {
-    unsigned long s_addr;
+Fungsi ini digunakan untuk menginisialisasi dan mengembalikan pointer ke struktur struct sockaddr_in. Struktur ini digunakan untuk mengonfigurasi alamat soket untuk berkomunikasi menggunakan protokol TCP/IP.
+
+```c
+struct sockaddr_in* init_sockaddr_in(uint16_t port_number) {
+    struct sockaddr_in *socket_address = malloc(sizeof(struct sockaddr_in));
+    memset(socket_address, 0, sizeof(*socket_address));
+    socket_address -> sin_family = AF_INET;
+    socket_address -> sin_addr.s_addr = htonl(INADDR_ANY);
+    socket_address -> sin_port = htons(port_number);
+    return socket_address;
 }
 ```
 
-- `hostent`: mengandung informasi terkait host
+#### Fungsi `process_operation`
 
-```objectivec
-struct hostent {
-    char *h_name;       // contoh: unist.ac.kr
-    char **h_aliases;   // daftar alias nama host
-    int h_addrtype;     // AF_INET
-    int h_length;       // panjang alamat IP 
-    char **h_addr_list; // menunjuk ke struktur in_addr
-    #define h_addr h_addr_list[0]
-};
+Fungsi ini digunakan untuk mengelola operasi pada data input yang diterima sebagai string dan mengembalikan hasil operasi sebagai string baru.
+
+```c
+char* process_operation(char *input) {
+    size_t n = strlen(input) * sizeof(char);
+    char *output = malloc(n);
+    memcpy(output, input, n);
+    return output;
+}
 ```
 
-## 2. Urutan Byte Jaringan
+#### Fungsi `main`
 
-Tidak semua komputer menyimpan byte dalam urutan yang sama. → Ada dua cara yang berbeda
+```c
+const uint16_t port_number = 5001;
+int server_fd = socket(AF_INET, SOCK_STREAM, 0);
 
-- Little Endian: byte urutan rendah disimpan pada alamat awal
-- Big Endian: byte urutan tinggi disimpan pada alamat awal
+struct sockaddr_in *server_sockaddr = init_sockaddr_in(port_number);
+struct sockaddr_in *client_sockaddr = malloc(sizeof(struct sockaddr_in));
+socklen_t server_socklen = sizeof(*server_sockaddr);
+socklen_t client_socklen = sizeof(*client_sockaddr);
 
-→ Untuk membuat mesin dengan urutan byte yang berbeda berkomunikasi satu sama lain, protokol Internet menentukan konvensi urutan byte kanonikal untuk data yang dikirimkan melalui jaringan. Ini disebut sebagai "Urutan Byte Jaringan."
-
-`sin_port` dan `sin_addr` dari `sockaddr_in` harus diatur dengan Urutan Byte Jaringan ini.
-
-```objectivec
-htons(): Host ke Network Short
-htonl(): Host ke Network Long
-ntohl(): Network ke Host Long
-ntohs(): Network ke Host Short
+if (bind(server_fd, (const struct sockaddr *) server_sockaddr, server_socklen) < 0)
+{
+    printf("Error! Bind has failed\n");
+    exit(0);
+}
+if (listen(server_fd, 3) < 0)
+{
+    printf("Error! Can't listen\n");
+    exit(0);
+}
 ```
 
-## 3. Fungsi Alamat IP
+Kode di atas menginisialisasi variabel port_number dengan nilai 5001, yang merupakan nomor port yang akan digunakan oleh server.
+Selanjutnya, program membuat socket server dengan menggunakan fungsi socket, mengkonfigurasi soket dengan keluarga alamat AF_INET dan jenis soket SOCK_STREAM untuk komunikasi TCP.
+Struktur server_sockaddr diinisialisasi dengan alamat dan port yang sesuai menggunakan fungsi init_sockaddr_in. Ini adalah alamat server yang akan digunakan untuk mengikat soket.
 
-Fungsi-fungsi ini memanipulasi alamat IP antara string ASCII dan nilai biner berurutan byte jaringan.
+Selain itu, dilakukan alokasi memori dinamis untuk struktur client_sockaddr, yang akan digunakan untuk menangani alamat klien saat ada koneksi masuk.Selanjutnya, program menggunakan bind untuk mengaitkan soket server dengan alamat yang telah diinisialisasi. Jika pengikatan gagal, program mencetak pesan kesalahan dan keluar. Kemudian, dengan listen, program menyiapkan soket server untuk mendengarkan koneksi masuk dengan antrian maksimum sebanyak 3. Jika gagal mendengarkan, pesan kesalahan dicetak dan program keluar.
 
-- int `inet_aton`(const char *strptr, struct in_addr *addrptr)
-
-```objectivec
-#include <arpa/inet.h>
-int retval;
-struct in_addr addrptr
-memset(&addrptr, '\0', sizeof(addrptr));
-retval = inet_aton("68.178.157.132", &addrptr);
+```c
+const size_t buffer_len = 256;
+char *buffer = malloc(buffer_len * sizeof(char));
+char *response = NULL;
+time_t last_operation;
+__pid_t pid = -1;
 ```
 
-- in_addr_t `inet_addr`(const char *strptr)
+Bagian di atas menginisialisasi beberapa variabel, termasuk buffer yang akan digunakan untuk menampung data dari klien, response yang akan digunakan untuk menampung respons yang akan dikirimkan ke klien, dan variabel lainnya untuk manajemen waktu dan proses anak.
 
-```objectivec
-#include <arpa/inet.h>
-struct sockaddr_in dest;
-memset(&dest, '\0', sizeof(dest));
-dest.sin_addr.s_addr = inet_addr("68.178.157.132");
-```
-
-char `inet_ntoa`(struct in_addr inaddr)
-
-```objectivec
-#include <arpa/inet.h>
-char *ip;
-ip = inet_ntoa(dest.sin_addr);
-printf("Alamat IP adalah: %s\n", ip);
-```
-
-## 4. Fungsi Socket
-
-(Anda dapat menggunakan parameter yang dicetak tebal untuk penggunaan pertama)
-
-1. `socket`
-
-```objectivec
-#include <sys/types.h>
-#include <sys/socket.h>
-int socket (int family, int type, int protocol);
-```
-
-- family: AF_INET, AF_INET6, AF_LOCAL, AF_ROUTE, AF_KEY
-- type: SOCK_STREAM (TCP), SOCK_DGRAM (UDP), SOCK_SEQPACKET, SOCK_RAW
-- protocol: IPPROTO_TCP
-
-, IPPROTO_UDP, IPPROTO_SCTP, (0: default sistem)
-
-→ Fungsi ini mengembalikan deskriptor socket, sehingga Anda dapat menggunakannya untuk fungsi lain.
-
-2. `connect`
-
-```objectivec
-#include <sys/types.h>
-#include <sys/socket.h>
-
-int connect(int sockfd, struct sockaddr *serv_addr, int addrlen);
-```
-
-- sockfd: deskriptor socket yang dikembalikan oleh fungsi socket
-- serv_addr: sockaddr yang berisi alamat IP dan port tujuan
-- addrlen: atur ke sizeof(struct sockaddr)
-
-3. `bind`
-
-```objectivec
-#include <sys/types.h>
-#include <sys/socket.h>
-
-int bind(int sockfd, struct sockaddr *my_addr, int addrlen);
-```
-
-- my_addr: sockaddr yang berisi alamat IP lokal dan port
-
-4. `listen`
-
-```objectivec
-#include <sys/types.h>
-#include <sys/socket.h>
-
-int listen(int sockfd, int backlog);
-```
-
-- mengubah socket yang belum terhubung menjadi socket pasif (kernel harus menerima permintaan koneksi yang masuk yang ditujukan ke socket ini)
-- backlog: jumlah maksimum koneksi yang harus diantrekan oleh kernel untuk socket ini
-
-5. `accept`
-
-```objectivec
-#include <sys/types.h>
-#include <sys/socket.h>
-
-int accept (int sockfd, struct sockaddr *cliaddr, socklen_t *addrlen);
-```
-
-- mengembalikan koneksi yang telah selesai berikutnya dari depan antrian koneksi yang telah selesai
-- cliaddr: struktur sockaddr yang berisi alamat IP dan port klien
-- addrlen: atur ke sizeof(struct sockaddr)
-
-5. `send`
-
-```objectivec
-int send(int sockfd, const void *msg, int len, int flags);
-```
-
-6. `recv`
-
-```objectivec
-int recv(int sockfd, void *buf, int len, unsigned int flags);
-```
-- buf: buffer untuk membaca informasi ke dalamnya
-- len: ini adalah panjang maksimum buffer
-- flags: atur ke 0
-
-7. untuk koneksi UDP
-
-```objectivec
-int sendto(int sockfd, const void *msg, int len, unsigned int flags, const struct sockaddr *to, int tolen);
-int recvfrom(int sockfd, void *buf, int len, unsigned int flags struct sockaddr *from, int *fromlen);
-```
-- `sendto` dan `recvfrom` digunakan alih-alih `send` `recv`
-
-8. `close`
-
-```objectivec
-int close(int sockfd);
-```
-
-- menutup komunikasi
-------
-### 5. Fungsi Tambahan
-
-1. `fork`
-
-- Membuat proses baru yang merupakan salinan persis dari proses saat ini.
-- Proses saat ini adalah induk, dan proses yang disalin adalah anak.
-
-```objectivec
-#include <sys/types.h>
-#include <unistd.h>
-
-int fork(void);
-```
-
-- `fork` mengembalikan 0 ketika itu adalah proses anak, dan mengembalikan ID proses anak ketika itu adalah proses induk. Jika gagal, mengembalikan -1.
-
-2. `bzero`
-
-- Menempatkan *n* byte byte null ke dalam string s.
-
-```objectivec
-void bzero(void *s, int nbyte);
-```
-
-3. `bcmp`
-
-- Membandingkan *n* byte string byte s1 dan byte string s2.
-
-```objectivec
-int bcmp(const void *s1, const void *s2, int nbyte);
-```
-
-Mengembalikan 0 jika identik, 1 sebaliknya.
-
-4. `bcopy`
-
-- Menyalin *n* byte byte string s1 ke byte string s2.
-
-```objectivec
-void bcopy(const void *s1, void *s2, int nbyte);
-```
-
-5. `memset`
-
-- Mengalokasikan memori dan mengembalikan pointer yang menunjuk ke memori yang baru dialokasikan.
-
-```objectivec
-void *memset(void *s, int c, int nbyte);
-```
-
-- s: sumber yang akan diatur
-- c: karakter yang akan diatur pada nbyte tempat
-- nbyte: jumlah byte
-
-## 6. Mari Berlatih: Server dan Klien Echo
-
-- Anda harus mengimplementasikan koneksi server dan klien,
-dan server dan klien Anda harus berhenti ketika klien mengirimkan "quit"
-Anda dapat mengompilasi kode dengan baris perintah dalam direktori proyek:
-
-```
-> make
-```
-
-- Jalankan server dan klien di server pada saat yang sama
-- dengan dua jendela terminal yang berbeda
-
-```
-> ./client
-> ./server
-```
-
-- Keluaran Contoh
-
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/19291492/44955907-36d64500-aef6-11e8-886e-1fcf77b377c4.png"/>
-</p>
-
-<p align="center">klien</p>
-
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/19291492/44955908-36d64500-aef6-11e8-9888-ab63856ad2d4.png"/>
-</p>
-
-<p align="center">server</p>
-
-## 7. Latihan Lebih Banyak: Server Multi Pengguna
-
-- Bisa ada beberapa klien yang mencoba menghubungkan diri ke server secara bersamaan
-- Server echo saat ini tidak menerima koneksi baru jika sudah diterima
-- Anda harus mengubah server echo. Dengan menggunakan fungsi `fork()`, setiap koneksi harus dijalankan secara bersamaan.
-- Petunjuk (kode semu server multi pengguna):
-
-```
-listen()
+```c
 while (1) {
-    newsockfd = accept();
+    int client_fd = accept(server_fd, (struct sockaddr *) &client_sockaddr, &client_socklen);
+
     pid = fork();
-    if (pid == 0) { // proses klien
-        close(sockfd);
-        // melakukan beberapa proses - membaca dan menulis
-        exit(0);
-    } else { // proses induk
-        close(newsockfd);
+
+    if (pid == 0) {
+        close(server_fd);
+
+        if (client_fd == -1) {
+            exit(0);
+        }
+
+        // ...
+    }
+    else {
+        close(client_fd);
     }
 }
 ```
 
-- Uji: Anda hanya perlu membuka tiga jendela terminal, menjalankan satu server dan dua klien
-- urutan pengujian:
+Di atas adalah bagian utama dari program, yang berupa loop tak terbatas. Di dalam loop ini, server akan terus menerima koneksi klien yang masuk.Setiap kali ada koneksi klien masuk, server akan menggunakan accept untuk menerima koneksi tersebut dan mendapatkan deskriptor file soket klien (client_fd).
 
+Kemudian, program menggunakan fork untuk menciptakan proses anak yang akan menangani koneksi klien tersebut. Proses anak akan menutup soket server (server_fd) karena hanya akan menangani koneksi klien.Jika fork mengembalikan nilai 0, itu berarti kita berada dalam proses anak, dan proses tersebut akan mengeksekusi perintah-perintah yang terdapat di dalam blok if (pid == 0).Jika fork mengembalikan nilai selain 0, itu berarti kita berada dalam proses induk, dan proses tersebut akan menutup soket klien (client_fd) dan melanjutkan loop untuk menerima koneksi klien berikutnya.
+
+```c
+if (buffer == "close") {
+    printf("Process %d: ", getpid());
+    close(client_fd);
+    printf("Closing session with `%d`. Bye!\n", client_fd);
+    break;
+}
 ```
-> jalankan satu server dan dua klien
-> klien1 mengirim "hello1"
-> klien2 mengirim "hello2"
-> klien2 mengirim "world2"
-> klien1 mengirim "world1"
-> klien1 mengirim "quit" dan klien2 mengirim "quit"
+
+Di dalam proses anak, program membaca data dari klien ke dalam buffer menggunakan read.Program kemudian memeriksa apakah data yang diterima adalah string "close". Jika demikian, maka proses anak akan menutup koneksi klien (client_fd), mencetak pesan penutupan sesi, dan keluar dari loop.
+
+```c
+if (strlen(buffer) == 0) {
+    clock_t d = clock() - last_operation;
+    double dif = 1.0 * d / CLOCKS_PER_SEC;
+
+    if (dif > 5.0) {
+        printf("Process %d: ", getpid());
+        close(client_fd);
+        printf("Connection timed out after %.3lf seconds. ", dif);
+        printf("Closing session with `%d`. Bye!\n", client_fd);
+        break;
+    }
+
+    continue;
+}
 ```
 
-Keluaran:
+Jika data yang diterima tidak kosong, maka program akan memeriksa apakah telah terjadi timeout. Jika tidak ada data yang diterima dalam waktu lebih dari 5 detik (sesuai dengan pengukuran waktu), maka koneksi akan dianggap timeout, dan proses anak akan menutup koneksi klien dan keluar dari loop.
 
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/19291492/44955909-36d64500-aef6-11e8-9345-1033eb29599c.png"/>
-</p>
 
-<p align="center">klien1</p>
+```c
+printf("Process %d: Received `%s`. Processing... ", getpid(), buffer);
 
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/19291492/44955910-36d64500-aef6-11e8-8f04-3a7a2deb1b6f.png"/>
-</p>
+free(response);
+response = process_operation(buffer);
+bzero(buffer, buffer_len * sizeof(char));
 
-<p align="center">klien2</p>
+send(client_fd, response, strlen(response), 0);
+printf("Responded with `%s`. Waiting for a new query...\n", response);
 
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/19291492/44955911-376edb80-aef6-11e8-929e-56667b372253.png"/>
-</p>
+last_operation = clock();
+```
 
-<p align="center">server multi pengguna</p>
+Jika tidak ada kondisi khusus yang memaksa keluar dari loop, maka program akan memproses permintaan dari klien. Pertama, program mencetak pesan yang menunjukkan menerima data dari klien dan memulai proses pengolahan.
+
+Program kemudian mengalokasikan memori untuk response (respons yang akan dikirimkan ke klien) dan memproses data yang diterima dari klien menggunakan fungsi process_operation. Setelah pemrosesan selesai, program mengirimkan respons kembali ke klien menggunakan send, kemudian mencetak pesan yang menunjukkan respons telah dikirim dan siap menerima permintaan baru.
+
+Terakhir, program memperbarui waktu terakhir operasi dengan menggunakan clock(). Setelah proses anak menyelesaikan tugasnya, ia akan keluar dari proses dengan perintah exit(0), dan proses anak yang baru akan menerima koneksi klien berikutnya dalam loop.
+
+Proses induk, di sisi lain, akan menutup soket klien (client_fd) karena komunikasi dengan klien akan ditangani oleh proses anak yang sesuai. Kemudian, proses induk akan kembali ke awal loop untuk menerima koneksi klien lainnya.
+
+### 2. Client - `client.c`
+
+Kode client berfungsi untuk terhubung ke server dengan alamat IP "127.0.0.1" pada port 5001, mengirimkan data, menerima respons dari server, dan keluar dari loop jika server mengirimkan pesan "quit".
+
+```c
+int sockfd, portno, n;
+struct sockaddr_in serv_addr;
+struct hostent *server;
+char buffer[256];
+portno = 5001;
+```
+
+Di bagian di atas, variabel-variabel dan struktur yang akan digunakan dalam program diinisialisasi. Ini mencakup variabel sockfd untuk file descriptor soket, portno yang menyimpan nomor port yang akan digunakan, serv_addr untuk menyimpan alamat server, server untuk menyimpan informasi host server, dan buffer untuk menyimpan data yang akan dikirim dan diterima.
+
+```c
+sockfd = socket(AF_INET, SOCK_STREAM, 0);
+server = gethostbyname("127.0.0.1");
+
+if (server == NULL) {
+    fprintf(stderr,"ERROR, no such host\n");
+    exit(0);
+}
+```
+
+Di sini, program membuat soket dengan menggunakan socket, mengatur keluarga alamat sebagai AF_INET dan jenis soket sebagai SOCK_STREAM untuk komunikasi TCP. Kemudian, program menggunakan gethostbyname untuk mengambil informasi host dengan alamat IP "127.0.0.1" (localhost). Jika host tidak ditemukan, program mencetak pesan kesalahan dan keluar.
+
+```c
+bzero((char *) &serv_addr, sizeof(serv_addr));
+serv_addr.sin_family = AF_INET;
+bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length);
+serv_addr.sin_port = htons(portno);
+```
+
+Selanjutnya, program mengatur struktur serv_addr dengan mengosongkan area memori terlebih dahulu menggunakan bzero. Kemudian, program mengatur keluarga alamat, alamat IP server, dan nomor port server ke dalam serv_addr.
+
+```c
+if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+    perror("ERROR while connecting");
+    exit(1);
+}
+```
+
+Di bagian ini, program mencoba untuk terhubung ke server menggunakan connect. Jika koneksi gagal, pesan kesalahan dicetak dan program keluar.
+
+```c
+while (1) {
+    printf("How many character you want to send? ");
+    
+    int amount;
+    scanf("%d", &amount);
+    char buffer[amount];
+
+    bzero(buffer,amount);
+
+    for(int i=0; i<amount; i++){
+        buffer[i] = 'a';
+    }
+    buffer[amount] = '\0';
+    
+    n = write(sockfd,buffer,strlen(buffer));
+
+    if (n < 0){
+        perror("ERROR while writing to socket");
+        exit(1);
+    }
+
+    bzero(buffer,256);
+    n = read(sockfd, buffer, 255);
+
+    if (n < 0){
+        perror("ERROR while reading from socket");
+        exit(1);
+    }
+    printf("server replied: %s \n", buffer);
+
+    if (!bcmp(buffer, "quit", 4))
+        break;
+}
+```
+
+Ini adalah loop utama program, di mana program akan berinteraksi dengan server. Program pertama-tama meminta pengguna untuk memasukkan jumlah karakter yang akan dikirim ke server.
+
+Kemudian, program mengisi buffer dengan karakter 'a' sebanyak yang diminta oleh pengguna. Data dalam buffer dikirim ke server menggunakan write, dan program menerima respons dari server menggunakan read.
+
+Jika terjadi kesalahan dalam penulisan atau pembacaan data, pesan kesalahan dicetak, dan program keluar.Program mencetak respons dari server dan memeriksa apakah respons tersebut adalah "quit". Jika ya, program akan keluar dari loop utama, mengakhiri komunikasi dengan server.
+
+## Percobaan
+
+Dalam percobaan ini saya mencoba untuk mengirim pesan string 'a' dengan panjang 4 dan 5. Pesan tersebut diterima server lalu dikirimkan lagi ke client dengan sukses.
+
+<img src="./assets/socket.png">
+
+## Weireshark Analisis
+
+**coming soon...**
