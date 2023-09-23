@@ -277,4 +277,5 @@ Dalam percobaan ini saya mencoba untuk mengirim pesan string 'a' dengan panjang 
 
 ## Weireshark Analisis
 
-**coming soon...**
+<img src="./assets/wireshark.jpg">
+<img src="./assets/haha.jpg">
