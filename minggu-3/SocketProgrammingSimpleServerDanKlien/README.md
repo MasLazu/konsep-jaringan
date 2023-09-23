@@ -191,7 +191,7 @@ Kode client berfungsi untuk terhubung ke server dengan alamat IP "127.0.0.1" pad
 int sockfd, portno, n;
 struct sockaddr_in serv_addr;
 struct hostent *server;
-char buffer[256];
+char buffer[10000];
 portno = 5001;
 ```
 
@@ -233,7 +233,6 @@ while (1) {
     
     int amount;
     scanf("%d", &amount);
-    char buffer[amount];
 
     bzero(buffer,amount);
 
