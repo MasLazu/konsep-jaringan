@@ -276,5 +276,22 @@ Dalam percobaan ini saya mencoba untuk mengirim pesan string 'a' dengan panjang 
 
 ## Weireshark Analisis
 
-<img src="./assets/wireshark.jpg">
-<img src="./assets/haha.jpg">
+Diabawah ini adalah perncoba mengirim pesan sebanyak 5000 karakter dari client ke server.
+
+<img src="./assets/terminaluntilN.png">
+
+<img src="./assets/serverUntilN.png">
+
+Satu request dalam dua segmen TCP terjadi karena data yang ingin dikirimkan oleh pengirim (host sumber) melebihi ukuran maksimum yang dapat diakomodasi dalam satu segmen TCP atau Maximum Segment Size (MSS). Segmen TCP adalah unit data dalam protokol TCP, dan ukurannya terbatas oleh beberapa faktor, termasuk Maximum Segment Size yang ditentukan selama penegosiasian koneksi TCP dan ukuran jendela (window size) yang tersedia di kedua ujung koneksi.
+
+Berikut adalah beberapa alasan mengapa request dapat dibagi menjadi dua segmen TCP:
+
+1. **MSS Terbatas:** Maximum Segment Size (MSS) adalah ukuran maksimum data yang dapat dikirim dalam satu segmen TCP. Nilai MSS ini dapat bervariasi tergantung pada implementasi dan konfigurasi TCP. Jika ukuran data yang ingin dikirim melebihi nilai MSS, maka data harus dibagi menjadi beberapa segmen yang lebih kecil.
+   
+2. **Penggunaan PSH:** PSH (Push) adalah salah satu flag dalam header TCP yang mengindikasikan bahwa data perlu segera disampaikan ke aplikasi penerima. Jika aplikasi pengirim menetapkan flag PSH, maka segmen akan dikirim secepat mungkin. Ini bisa menyebabkan pengiriman lebih cepat dari segmen pertama yang berisi data yang telah di-push, dan segmen kedua untuk data tambahan.
+   
+3. **Optimasi dan Pengiriman Efisien:** Terkadang, pembagian data menjadi segmen yang lebih kecil dapat memungkinkan pengiriman yang lebih efisien. Segmen yang lebih kecil dapat meminimalkan overhead dalam jaringan dan memungkinkan pengiriman data secepat mungkin jika ada kebutuhan mendesak untuk menerima data oleh penerima.
+   
+4. **Ukuran Jendela (Window Size):** Ukuran jendela (window size) TCP diatur oleh kedua ujung koneksi. Jika ukuran jendela kecil, maka penerima akan memberi tahu pengirim untuk mengurangi laju pengiriman data. Dalam situasi ini, pengirim dapat membagi data menjadi segmen yang lebih kecil agar sesuai dengan ukuran jendela yang tersedia.
+
+Dalam kasus ini, request TCP dibagi menjadi dua segmen karena beberapa faktor di atas yang mengharuskan pembagian data menjadi lebih kecil agar sesuai dengan batasan-batasan yang ada dalam protokol TCP dan konfigurasi jaringan.
