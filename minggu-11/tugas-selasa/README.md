@@ -5,7 +5,7 @@
 <img src="./assets/physical.png">
 
 ## **3. Logical**
-<img src="./assets/logical.png">
+<img src="./assets/logic.jpg">
 
 ## **4. Printing route table**
 <img src="./assets/ip_route_print.png">
