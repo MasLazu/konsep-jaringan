@@ -1,0 +1,94 @@
+!
+version 12.4
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+no service password-encryption
+!
+hostname R1
+!
+!
+!
+!
+ip dhcp excluded-address 192.168.0.0 192.168.0.5
+!
+ip dhcp pool VLAN0010
+ network 192.168.0.0 255.255.255.0
+ default-router 192.168.0.1
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface FastEthernet0/0
+ ip address 10.0.0.1 255.255.255.0
+ duplex auto
+ speed auto
+!
+interface FastEthernet0/1
+ ip address 172.16.0.1 255.255.255.0
+ ip access-group 1 out
+ duplex auto
+ speed auto
+!
+interface FastEthernet0/1.10
+ encapsulation dot1Q 10
+ ip address 192.168.0.1 255.255.255.0
+!
+interface FastEthernet0/1.20
+ no ip address
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+router ospf 1
+ router-id 3.3.3.3
+ log-adjacency-changes
+ network 10.0.0.1 0.0.0.0 area 0
+ network 192.168.0.1 0.0.0.0 area 0
+!
+router rip
+!
+ip classless
+ip route 192.168.1.0 255.255.255.0 10.0.0.2 
+!
+ip flow-export version 9
+!
+!
+access-list 1 permit host 192.168.1.1
+!
+!
+!
+!
+!
+!
+line con 0
+!
+line aux 0
+!
+line vty 0 4
+ login
+!
+!
+!
+end
+
