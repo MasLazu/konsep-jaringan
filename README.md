@@ -1,5 +1,7 @@
 # Tugas Konsep Jaringan
 
+Dosen penganpu: Dr. Ferry Astika Saputra,ST, M.Sc
+
 ```
 Nama : Muhammad Fattachul Aziz
 
