@@ -1,6 +1,7 @@
 # Tugas Konsep Jaringan
 
-Dosen penganpu: Dr. Ferry Astika Saputra,ST, M.Sc
+Tugas ini merupakan tugas mata kuliah konsep jaringan  yang di bimbing oleh Bpk. Ferry Astika S
+
 
 ```
 Nama : Muhammad Fattachul Aziz
